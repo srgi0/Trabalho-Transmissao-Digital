@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.special import erf
 
 # Parâmetros da simulação
-M = 256                      # Ordem da modulação PSK (potência de 2)
+M = 8                      # Ordem da modulação PSK (potência de 2)
 N_bits = 10**6             # Número aproximado de bits
 EbN0_dB_range = np.arange(0, 13, 2)  # Valores de SNR em dB
 
@@ -14,6 +14,7 @@ N_bits = (N_bits // k) * k  # Corrige para ser múltiplo exato
 # 2. Gerar mapeamento Gray para M-PSK
 gray_code = np.array([np.binary_repr(i ^ (i >> 1), width=k)
                      for i in range(M)])
+print('Sequência em Gray Code: ', gray_code)
 
 # 3. Funções auxiliares
 def theoretical_ser(EbN0_lin, M):
@@ -50,8 +51,10 @@ for EbN0_dB in EbN0_dB_range:
     rx_signal = tx_signal + noise
 
     # Demodulação
-    rx_phase = np.angle(rx_signal) % (2*np.pi)
-    dec_rx = np.round(rx_phase*M/(2*np.pi)).astype(int) % M
+    # Gere todos os símbolos possíveis
+    constellation = np.exp(1j * 2*np.pi*np.arange(M)/M)
+    # Decisão por mínima distância
+    dec_rx = np.argmin(np.abs(rx_signal.reshape(-1,1) - constellation), axis=1)
 
     # Cálculo de erros
     ser = np.mean(dec_rx != dec_symbols)
